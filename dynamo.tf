@@ -8,9 +8,9 @@ resource "aws_dynamodb_table" "visitorCountStore" {
     type = "S"
   }
 
-   attribute {
-    name = "numVisitors"
-    type = "N"
+#    attribute {
+#     name = "numVisitors"
+#     type = "N"
   }
 
   ttl {
