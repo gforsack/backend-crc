@@ -36,5 +36,5 @@ resource "aws_s3_bucket_website_configuration" "crc_bucket_hosting" {
 }
 
 output "bucket_name" {
-  value = crc_bucket.id
+  value = aws_s3_bucket.crc_bucket.id
 }
