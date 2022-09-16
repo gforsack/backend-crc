@@ -3,13 +3,13 @@
 resource "aws_dynamodb_table" "visitCount" {
   name           = "visitCount"
   billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "site"
-  range_key      = "visitorNumber"
+  hash_key       = "visitorNumber"
+  #range_key      = "visitorNumber"
 
-  attribute {
-    name = "site"
-    type = "S"
-  }
+#   attribute {
+#     name = "site"
+#     type = "S"
+#   }
 
   attribute {
     name = "visitorNumber"
