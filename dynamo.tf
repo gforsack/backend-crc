@@ -11,7 +11,7 @@ resource "aws_dynamodb_table" "visitorCountStore" {
 #    attribute {
 #     name = "numVisitors"
 #     type = "N"
-  }
+#   }
 
   ttl {
     attribute_name = "TimeToExist"
