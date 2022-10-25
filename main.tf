@@ -320,7 +320,7 @@ resource "aws_lambda_function" "visitCounter" {
 data "archive_file" "lambda-zip" {
   type = "zip"
   #source_file = "{path.module}/../../lambda/my-function/index.js"  #python file location
-  source_dir = "${path.module}/../lambda/"
+  source_dir = "${path.module}/lambda/"
   output_path = "lambda.zip"
 
 }
