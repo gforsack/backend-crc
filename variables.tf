@@ -1,8 +1,8 @@
 variable "domain_names" {
   type = map(any)
   default = {
-    "subdomain"  = "${ secrets.SUBDOMAIN }"
-    "rootdomain" = "${ secrets.ROOT_DOMAIN }"
+    "subdomain"  = "www.itsgandhi.com"
+    "rootdomain" = "itsgandhi.com"
   }
 }
 
@@ -32,10 +32,4 @@ variable "stage_name" {
   description = "Deployment stage"
   type        = string
   default     = "prod"
-}
-
-variable "zone_ID" {
-  description = "Hosted zone ID in Route 53"
-  type        = string
-  default     = "${ secrets.ZONE_ID }"
 }
