@@ -1,8 +1,8 @@
 variable "domain_names" {
   type = map(any)
   default = {
-    "subdomain"  = "www.itsgandhi.com"
-    "rootdomain" = "itsgandhi.com"
+    "subdomain"  = "${{ secrets.SUBDOMAIN }}"
+    "rootdomain" = "${{ secrets.ROOT_DOMAIN }}"
   }
 }
 
@@ -37,5 +37,5 @@ variable "stage_name" {
 variable "zone_ID" {
   description = "Hosted zone ID in Route 53"
   type        = string
-  default     = "Z0227231135V9563WM18T"
+  default     = "${{ secrets.ZONE_ID }}"
 }
