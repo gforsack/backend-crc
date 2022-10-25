@@ -1,10 +1,10 @@
 ### Create certiifcate in ACM for HTTPS traffic
 
 resource "aws_acm_certificate" "acm-cert" {
-  domain_name = "${var.domain_names.rootdomain}"
+  domain_name = "${{ secrets.ROOT_DOMAIN }}"
   subject_alternative_names = [
-    "*.${var.domain_names.rootdomain}",
-    "${var.domain_names.rootdomain}",
+    "*.${{ secrets.ROOT_DOMAIN }}",
+    "${{ secrets.ROOT_DOMAIN }}",
   ]
   validation_method = "DNS"
 }
@@ -12,7 +12,7 @@ resource "aws_acm_certificate" "acm-cert" {
 ### SUBDOMAIN BUCKET CREATION WITH OAI POLICY
 resource "aws_s3_bucket" "subdomain-bucket" {
   # (resource arguments)
-  bucket = var.domain_names["subdomain"]
+  bucket = "${{ secrets.SUBDOMAIN }}"
 
 force_destroy = true
 }
@@ -49,7 +49,7 @@ resource "aws_s3_bucket_public_access_block" "subdomain-public-access" {
 
 ### ROOTDOMAIN BUCKET CREATION WITH TRAFFIC REDIRECT TO SUBDOMAIN BUCKET
 resource "aws_s3_bucket" "rootdomain-bucket" {
-  bucket = var.domain_names["rootdomain"]
+  bucket = "${{ secrets.ROOT_DOMAIN }}"
 }
 
 resource "aws_s3_bucket_public_access_block" "rootdomain-public-access" {
@@ -83,7 +83,7 @@ resource "aws_cloudfront_distribution" "subdomain-distribution" {
   }
 
   aliases = [
-    "${var.domain_names["subdomain"]}",
+    "${{ secrets.SUBDOMAIN }}",
   ]
   comment             = "subdomain distribution"
   default_root_object = "index.html"
@@ -111,7 +111,7 @@ resource "aws_cloudfront_distribution" "subdomain-distribution" {
     max_ttl     = 0
     min_ttl     = 0
     # do something about line below
-    target_origin_id       = "${var.domain_names.subdomain}.s3.us-east-1.amazonaws.com"
+    target_origin_id       = "${{ secrets.SUBDOMAIN }}.s3.us-east-1.amazonaws.com"
     viewer_protocol_policy = "redirect-to-https"
   }
 
@@ -132,7 +132,7 @@ resource "aws_cloudfront_distribution" "subdomain-distribution" {
 }
 
 resource "aws_cloudfront_origin_access_identity" "sub-oai" {
-  comment = "access-identity-${var.domain_names.subdomain}.s3.us-east-1.amazonaws.com"
+  comment = "access-identity-${{ secrets.SUBDOMAIN }}.s3.us-east-1.amazonaws.com"
 }
 
 ### ROOT DOMAIN CF DISTRIBUTION
@@ -155,7 +155,7 @@ resource "aws_cloudfront_distribution" "rootdomain-distribution" {
     }
   }
   aliases = [
-    "${var.domain_names["rootdomain"]}",
+    "${{ secrets.ROOT_DOMAIN }}",
   ]
   comment             = "root distribution"
   enabled             = true
@@ -202,9 +202,9 @@ resource "aws_cloudfront_distribution" "rootdomain-distribution" {
 
 # Create A records for cloudfront distributions in Route53
 resource "aws_route53_record" "www" {
-  name    = "${var.domain_names["subdomain"]}"
+  name    = "${{ secrets.SUBDOMAIN }}"
   type    = "A"
-  zone_id = var.zone_ID
+  zone_id = "${{ secrets.ZONE_ID }}"
 
   alias {
     evaluate_target_health = false
@@ -215,9 +215,10 @@ resource "aws_route53_record" "www" {
 }
 
 resource "aws_route53_record" "root" {
-  name    = "${var.domain_names["rootdomain"]}"
+  name    = "${{ secrets.ROOT_DOMAIN }}"
   type    = "A"
-  zone_id = var.zone_ID
+  zone_id = "${{ secrets.ZONE_ID }}"
+
 
   alias {
     evaluate_target_health = false
@@ -272,35 +273,9 @@ resource "aws_iam_role" "lambda-iam-role" {
 EOF
 }
 
-resource "aws_iam_policy" "lambda_policy" {
-  policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "dynamodb:GetItem",
-                "dynamodb:PutItem",
-                "dynamodb:UpdateItem",
-            ],
-            "Effect": "Allow",
-            "Resource": "${aws_dynamodb_table.visitorCountStore.arn}"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-            ],
-            "Resource": "*"
-                }
-            ]
-            })
-        }
-
 resource "aws_iam_role_policy_attachment" "lambda_policy_att" {
   role       = "${aws_iam_role.lambda-iam-role.name}"
-  policy_arn = aws_iam_policy.lambda_policy.arn
+  policy_arn = "${{ secrets.LAMBDA_ROLE }}"
 }
 
 resource "aws_lambda_function" "visitCounter" {
@@ -319,7 +294,7 @@ resource "aws_lambda_function" "visitCounter" {
 
 data "archive_file" "lambda-zip" {
   type = "zip"
-  #source_file = "{path.module}/../../lambda/my-function/index.js"  #python file location
+
   source_dir = "${path.module}/lambda/"
   output_path = "lambda.zip"
 
