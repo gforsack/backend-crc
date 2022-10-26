@@ -1,10 +1,10 @@
 ### Create certiifcate in ACM for HTTPS traffic
 
 resource "aws_acm_certificate" "acm-cert" {
-  domain_name = "${{ secrets.ROOT_DOMAIN }}"
+  domain_name = "${var.rootdomain}"
   subject_alternative_names = [
-    "*.${{ secrets.ROOT_DOMAIN }}",
-    "${{ secrets.ROOT_DOMAIN }}",
+    "*.${var.rootdomain}",
+    "${var.rootdomain}",
   ]
   validation_method = "DNS"
 }
@@ -12,7 +12,7 @@ resource "aws_acm_certificate" "acm-cert" {
 ### SUBDOMAIN BUCKET CREATION WITH OAI POLICY
 resource "aws_s3_bucket" "subdomain-bucket" {
   # (resource arguments)
-  bucket = "${{ secrets.SUBDOMAIN }}"
+  bucket = var.subdomain
 
 force_destroy = true
 }
@@ -49,7 +49,7 @@ resource "aws_s3_bucket_public_access_block" "subdomain-public-access" {
 
 ### ROOTDOMAIN BUCKET CREATION WITH TRAFFIC REDIRECT TO SUBDOMAIN BUCKET
 resource "aws_s3_bucket" "rootdomain-bucket" {
-  bucket = "${{ secrets.ROOT_DOMAIN }}"
+  bucket = var.rootdomain
 }
 
 resource "aws_s3_bucket_public_access_block" "rootdomain-public-access" {
@@ -83,7 +83,7 @@ resource "aws_cloudfront_distribution" "subdomain-distribution" {
   }
 
   aliases = [
-    "${{ secrets.SUBDOMAIN }}",
+    "${var.subdomain}",
   ]
   comment             = "subdomain distribution"
   default_root_object = "index.html"
@@ -111,7 +111,7 @@ resource "aws_cloudfront_distribution" "subdomain-distribution" {
     max_ttl     = 0
     min_ttl     = 0
     # do something about line below
-    target_origin_id       = "${{ secrets.SUBDOMAIN }}.s3.us-east-1.amazonaws.com"
+    target_origin_id       = "${var.subdomain}.s3.us-east-1.amazonaws.com"
     viewer_protocol_policy = "redirect-to-https"
   }
 
@@ -132,7 +132,7 @@ resource "aws_cloudfront_distribution" "subdomain-distribution" {
 }
 
 resource "aws_cloudfront_origin_access_identity" "sub-oai" {
-  comment = "access-identity-${{ secrets.SUBDOMAIN }}.s3.us-east-1.amazonaws.com"
+  comment = "access-identity-${var.subdomain}.s3.us-east-1.amazonaws.com"
 }
 
 ### ROOT DOMAIN CF DISTRIBUTION
@@ -155,7 +155,7 @@ resource "aws_cloudfront_distribution" "rootdomain-distribution" {
     }
   }
   aliases = [
-    "${{ secrets.ROOT_DOMAIN }}",
+    "${var.rootdomain}",
   ]
   comment             = "root distribution"
   enabled             = true
@@ -202,9 +202,9 @@ resource "aws_cloudfront_distribution" "rootdomain-distribution" {
 
 # Create A records for cloudfront distributions in Route53
 resource "aws_route53_record" "www" {
-  name    = "${{ secrets.SUBDOMAIN }}"
+  name    = "${var.subdomain}"
   type    = "A"
-  zone_id = "${{ secrets.ZONE_ID }}"
+  zone_id = var.zone_ID
 
   alias {
     evaluate_target_health = false
@@ -215,10 +215,9 @@ resource "aws_route53_record" "www" {
 }
 
 resource "aws_route53_record" "root" {
-  name    = "${{ secrets.ROOT_DOMAIN }}"
+  name    = "${var.rootdomain}"
   type    = "A"
-  zone_id = "${{ secrets.ZONE_ID }}"
-
+  zone_id = var.zone_ID
 
   alias {
     evaluate_target_health = false
@@ -273,9 +272,35 @@ resource "aws_iam_role" "lambda-iam-role" {
 EOF
 }
 
+resource "aws_iam_policy" "lambda_policy" {
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+            ],
+            "Effect": "Allow",
+            "Resource": "${aws_dynamodb_table.visitorCountStore.arn}"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+            ],
+            "Resource": "*"
+                }
+            ]
+            })
+        }
+
 resource "aws_iam_role_policy_attachment" "lambda_policy_att" {
   role       = "${aws_iam_role.lambda-iam-role.name}"
-  policy_arn = "${{ secrets.LAMBDA_ROLE }}"
+  policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
 resource "aws_lambda_function" "visitCounter" {
@@ -294,7 +319,7 @@ resource "aws_lambda_function" "visitCounter" {
 
 data "archive_file" "lambda-zip" {
   type = "zip"
-
+  #source_file = "{path.module}/../../lambda/my-function/index.js"  #python file location
   source_dir = "${path.module}/lambda/"
   output_path = "lambda.zip"
 
