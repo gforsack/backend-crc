@@ -1,9 +1,7 @@
-variable "domain_names" {
-  type = map(any)
-  default = {
-    "subdomain"  = "www.itsgandhi.com"
-    "rootdomain" = "itsgandhi.com"
-  }
+variable "rootdomain" {
+}
+
+variable "subdomain" {
 }
 
 
@@ -35,7 +33,4 @@ variable "stage_name" {
 }
 
 variable "zone_ID" {
-  description = "Route 53 hosted zone ID"
-  type        = string
-  default     = "Z0227231135V9563WM18T"
 }
