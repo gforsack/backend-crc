@@ -33,3 +33,9 @@ variable "stage_name" {
   type        = string
   default     = "prod"
 }
+
+variable "zone_ID" {
+  description = "Route 53 hosted zone ID"
+  type        = string
+  default     = "Z0227231135V9563WM18T"
+}
